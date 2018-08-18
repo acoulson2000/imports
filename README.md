@@ -14,7 +14,7 @@ This plugin provides support for importing bulk data, typically via CSV file upl
  - Optional support for distributed processing (via optional RabbitMQ plugin)
  - Optional support for confirmation and summary email notification  (via optional Mail Plugin)
  - All aspects of import processing can be overridden
- - Pluggable import logging framework (includes in-memory and Mongo logging implementations)
+ - Pluggable import logging framework (includes in-memory, MySQL and Mongo logging implementations)
  - Support for canceling asynchronous and queue-based import processing
  - Support in customized import instructions
  - Support for archiving imported file
@@ -573,6 +573,51 @@ Sample Log structure in JSON:
 ```
 
 Custom logger classes should implement the `com.grails.plugins.imports.logging.ImportLogger` interface that defines the methods above.
+
+MySql Logger
+--------------------------
+
+One such custom logger has been added - the MysqlLogger. This logger will log the JSON content to a table via a Domain Object. This is very usefull for retaining an audit trail of imports and retaining logs over reboots, without requiring a MongoDb installation.
+
+To use Mysql Logging:
+
+Create a Domain Object called ImportLog with a package name of grails.plugins.imports:
+```
+package grails.plugins.imports
+
+import java.util.Date;
+
+class ImportLog {
+
+ 	String id
+	String document
+	Date dateCreated
+	
+	static mapping = {
+		version false
+		id name: "id", generator: "assigned"
+		document sqlType:"longtext"
+    }
+}
+```
+
+If you create your tables manually, create a table called Import_Log using this SQL:
+```
+CREATE TABLE import_log (
+  id varchar(45) NOT NULL,
+  document longtext,
+  date_created datetime DEFAULT NULL,
+  PRIMARY KEY (`id`)
+);
+```
+Add this entry to your application's Config.groovy class to tell the Importer to use the MysqlLogger implementation:
+```
+grails.plugins.imports.loggingProvider = 'org.oplontis.MysqlLogger'
+```
+
+The JSON result of an import attempt will now be logged to the "document" column of Import_Log. The import id (GUID) will be used as the primary key.
+
+**NOTE** You could adapt the Domain Class to work with other database types, but you will probably need to change the sqlType fo the document property to be whatever very long text type is supported by your database.
 
 Import actions
 --------------------------

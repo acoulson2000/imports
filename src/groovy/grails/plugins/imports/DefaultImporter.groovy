@@ -73,26 +73,47 @@ class DefaultImporter {
 		grails.util.Holders.grailsApplication.mainContext['importsLogger']
 	}
 
-    static forEachImportRow(inputStream,headers, closure) {
+    static forEachImportRow(inputStream, headers, closure) {
         def delimiter  = ",",
-            seperator = "\"",
             regex = ~"\\G(?:^|\\${delimiter})(?:\"([^\"]*+)\"|([^\"\\${delimiter}]*+))",
             rowCount = 0
-        inputStream.eachLine { line ->
-        	if (line?.trim()?.length() > 0) {
-	            def row = [:],
-	                matcher = regex.matcher(line),
-	                colCount = 0
-	            while (matcher.find()) {
-	              row[headers[colCount]] = (matcher.group(1) ?: matcher.group(2))
-	              colCount++
-	            }
-	            closure(row,rowCount)
-	            rowCount++
-        	}
-        }
+		forEachCsvParsedRow(inputStream) {line ->
+			if (line?.trim()?.length() > 0) {
+				def row = [:],
+					matcher = regex.matcher(line),
+					colCount = 0
+				while (matcher.find()) {
+				  row[headers[colCount]] = (matcher.group(1) ?: matcher.group(2))
+				  colCount++
+				}
+				closure(row,rowCount)
+				rowCount++
+			}
+		}
     }
-
+	
+	static forEachCsvParsedRow(inputStream, closure) {
+        def seperator = "\""
+		List allLines = inputStream.readLines()
+		int totalLineCount = allLines.size()
+		int lineIdx = 0
+		String completeLine = ""
+		while (totalLineCount > lineIdx) {
+			String currentLine = allLines.get(lineIdx++)
+			completeLine += currentLine
+			int quoteCount = currentLine.count(seperator)
+			if (quoteCount % 2 > 0) {
+				while(quoteCount % 2 > 0 && lineIdx < totalLineCount) {
+					currentLine = allLines.get(lineIdx++)
+					quoteCount += currentLine.count(seperator)
+					completeLine += "<br/>" + currentLine
+				}
+			}
+			closure(completeLine)
+			completeLine = ""
+		}
+	}
+	
     static validateFile = {uploadedFile, params, importLogId->
 		def inputStream,
 		    headers,
@@ -100,7 +121,7 @@ class DefaultImporter {
 		    fileRowIndex = 1,
 		    count = 0,
 		    errorFound = false,
-		    eachRow,
+		    //eachRow,
 		    importLogger = getLogger()
 		try {
 			inputStream = new BufferedReader(new InputStreamReader (uploadedFile.inputStream))
@@ -111,23 +132,23 @@ class DefaultImporter {
 			importLogger.setImportLogValue(importLogId, 'headers', headers)
 
 			errorFound = delegate.validateHeaders(headers, params, importLogId) == false
-			eachRow = inputStream.readLine()
-			while(eachRow != null) {
-				if (eachRow.trim().length() > 0) {
-					eachRow = eachRow.split(',').collect()
-					if (headers.size() != eachRow.size()) {
+
+			forEachCsvParsedRow(inputStream) {line ->
+				if (line.trim().length() > 0) {
+					def columns = getColumns(line)
+					if (headers.size() != columns.size()) {
 						def row = [:]
 						headers.eachWithIndex {h, i->
-							row[h] = eachRow[i]
+							row[h] = columns[i]
 						}
 						importLogger.logErrorRow(importLogId, row, fileRowIndex, 'Row column count does not match header count')
 						errorFound = true
 					}
 					count++
 				}
-				eachRow = inputStream.readLine()
 				fileRowIndex++
 			}
+			
 			importLogger.setImportLogValue(importLogId, 'total', count)
 		} finally {
 			try {inputStream?.reset()} catch (ee) {delegate.log.error(ee)}
@@ -135,21 +156,36 @@ class DefaultImporter {
 		return !errorFound
     }
 
+	static ArrayList getColumns(String row) {
+		int quoteCount = 0
+		ArrayList columns = new ArrayList()
+		String column = ""
+		for (byte c : row.getBytes()) {
+			if (((char)c) == '"') { 
+				quoteCount++
+			} else if (((char)c) == ',' && quoteCount % 2 == 0) { // found a comma and NOT inside a pair of quotes
+				columns.add(column)
+				column = ""
+			} else {
+				column += (char)c
+			}
+		}
+		if (row.substring(row.length()-1) == ",") columns.add("")
+		return columns
+	}
+	
     static getRowCount = {uploadedFile, params, importLogId->
 		def inputStream,
 			fileSizeBytes,
-		    totalRowsToImport = 0,
-		    eachRow
+		    totalRowsToImport = 0
 		try {
 			inputStream = new BufferedReader(new InputStreamReader (uploadedFile.inputStream))
 			fileSizeBytes = uploadedFile.getSize().toInteger()
 			inputStream.mark(fileSizeBytes*2)
-			eachRow = inputStream.readLine()
-			while(eachRow != null) {
-				if (eachRow.trim().length() > 0) {
+			forEachCsvParsedRow(inputStream) {line ->
+				if (line.trim().length() > 0) {
 					totalRowsToImport++
 				}
-				eachRow = inputStream.readLine()
 			}
 		} finally {
 			try {inputStream?.reset()} catch (ee) {log.error(ee)}
@@ -208,12 +244,10 @@ class DefaultImporter {
     }
 
     static columns = {params, importLogId->
-		delegate.log.debug('columns')
 		return delegate.columns__(params, importLogId)
     }
 
     static columns__ = {params, importLogId->
-		delegate.log.debug('columns__')
 	    def domainArtefact = grails.util.Holders.grailsApplication.getArtefactByLogicalPropertyName('Domain', params.entityName),
 	        columns = [:]
 		domainArtefact?.properties.each{ if (!EXCLUDED.contains(it.name)) columns[it.name] = delegate.column(params, it.name, importLogId)}
@@ -221,7 +255,6 @@ class DefaultImporter {
     }
 
     static column = {params, nm, importLogId->
-		delegate.log.debug('column')
     	return nm
     }
 
@@ -277,13 +310,13 @@ class DefaultImporter {
 	        matchVals = [:],
 	        existing,
 	        matchProps = delegate.matchProperties instanceof List ? delegate.matchProperties : [delegate.matchProperties?.toString()]
-	    matchProps.each {k->
-	    	def col = columns.find {entry-> entry.value == k},
-	    		colName = col?.key ?: k, 
-	    	    prop = col?.value ?: k,
-	    	    val = delegate.marshall(colName, prop, row[colName], importLogId) ?: delegate.defaultValue(colName, prop, importLogId)
-	    	matchVals[k.toString()] = val
-	    }
+			matchProps.each {k->
+				def col = columns.find {entry-> entry.value == k},
+		    		colName = col?.key ?: k, 
+		    	    prop = col?.value ?: k,
+		    	    val = delegate.marshall(colName, prop, row[colName], importLogId) ?: delegate.defaultValue(colName, prop, importLogId)
+				matchVals[k.toString()] = val
+			}
 	    existing = domainClassInstance.findWhere(matchVals) 
 	    if (existing) {
 			importLogger.logUpdateRow(importLogId, row, index)    		
@@ -303,8 +336,11 @@ class DefaultImporter {
 	    columns.each {k, v->
 			def property = columns[k] ?: k,
 				value = delegate.marshall(k, property, row[k], importLogId) ?: delegate.defaultValue(k, property, importLogId)
-			bindingMap.put(property, value)
+			if (row[k] != null) {
+				bindingMap.put(property, value)
+			}
 	    }
+		delegate.log.debug('bindingMap:' + bindingMap.inspect())
 		DataBindingUtils.bindObjectToDomainInstance(domainArtefact, object, bindingMap)
 		DataBindingUtils.assignBidirectionalAssociations(object, bindingMap, domainArtefact) 
 		delegate.afterBindRow(object, row, index, columns, params, importLogId)
@@ -312,12 +348,11 @@ class DefaultImporter {
     }
 
     static defaultValue = {columnName, propertyName, importLogId->
-		delegate.log.debug('defaultValue:'+columnName)
+		//delegate.log.debug('defaultValue:'+columnName)
 		return null
     }
 
 	static marshall = {columnName,  propertyName, value, importLogId->
-		delegate.log.debug('marshall:'+columnName)
 		return value
 	}
 
