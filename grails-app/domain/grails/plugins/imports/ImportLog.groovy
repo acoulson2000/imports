@@ -1,4 +1,4 @@
-package org.oplontis
+package grails.plugins.imports
 
 import java.util.Date;
 

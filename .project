@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>imports</name>
+	<name>bulk-data-imports</name>
 	<comment></comment>
 	<projects>
 	</projects>
@@ -16,4 +16,11 @@
 		<nature>org.eclipse.jdt.groovy.core.groovyNature</nature>
 		<nature>org.eclipse.jdt.core.javanature</nature>
 	</natures>
+	<linkedResources>
+		<link>
+			<name>.link_to_grails_plugins</name>
+			<type>2</type>
+			<locationURI>GRAILS_ROOT/2.4.5/projects/bulk-data-imports/plugins</locationURI>
+		</link>
+	</linkedResources>
 </projectDescription>

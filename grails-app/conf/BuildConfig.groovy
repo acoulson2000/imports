@@ -40,24 +40,27 @@ grails.project.dependency.resolution = {
     }
     dependencies {
         // specify dependencies here under either 'build', 'compile', 'runtime', 'test' or 'provided' scopes eg.
-      runtime('mysql:mysql-connector-java:5.1.13') {
+      runtime('mysql:mysql-connector-java:5.1.27') {
         export = false
       }
     }
 
     plugins {
-        build(":release:3.0.1",
-              ":rest-client-builder:1.0.3",
-              ":tomcat:7.0.52.1") {
-            export = false
-        }
+		build ':release:3.0.1', ':rest-client-builder:1.0.3', {
+			export = false
+		}
+//        build(":release:3.0.1",
+//              ":rest-client-builder:1.0.3",
+//              ":tomcat:7.0.52.1") {
+//            export = false
+//        }
         compile ":executor:0.3"
-        runtime(//':mongodb:1.3.3',
-            ':rabbitmq:1.0.0',
-            ':mail:1.0.1',
-            ':hibernate:3.6.10.9') {
-            export = false
-        }
+//        runtime(//':mongodb:1.3.3',
+//            //':rabbitmq:1.0.0',
+//            ':mail:1.0.1',
+//            'runtime ":hibernate4:4.3.5.2"') {
+//            export = false
+//        }
 
     }
 }

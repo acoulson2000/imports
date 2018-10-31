@@ -1,6 +1,19 @@
 **Bulk Data Imports Grails Plugin**
 =====================
 
+**NOTE**
+THIS PLUGIN IS A FORK OF http://github.com/bertramdev/imports - available in the Grails Plugins as
+"Bulk Data Imports" plugin. The original had amjor issues with parsing CSV files that include
+either commas or quoted text. They have not merged my fork, but I am making it available here. It
+also includes A "logger" that logs to MySql, which is convenient if you want to persist the logs of 
+your imports, but don't want to do it in Mongo DB. It would probably also work with other ANSI SQL
+DB's, although you might need to tweek the ImportLog Domain Object. See new section at the bottom of this
+README for info on how to enable that. I recommend you build this project and install it locally in 
+your local repo via "grails package-maven" then include it in your project via:
+```runtime ":bulk-data-imports:0.1.4"```
+
+**~END NOTE~**
+
 This plugin provides support for importing bulk data, typically via CSV file upload.
 
 **Included features:**
@@ -612,7 +625,7 @@ CREATE TABLE import_log (
 ```
 Add this entry to your application's Config.groovy class to tell the Importer to use the MysqlLogger implementation:
 ```
-grails.plugins.imports.loggingProvider = 'org.oplontis.MysqlLogger'
+grails.plugins.imports.loggingProvider = 'grails.plugins.imports.MysqlLogger'
 ```
 
 The JSON result of an import attempt will now be logged to the "document" column of Import_Log. The import id (GUID) will be used as the primary key.

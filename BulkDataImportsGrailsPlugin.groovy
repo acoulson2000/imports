@@ -9,8 +9,8 @@ class BulkDataImportsGrailsPlugin {
     def version = "0.1.4"
     def grailsVersion = "2.0 > *"
     def title = "Bulk Data Imports Plugin"
-    def author = "Jeremy Leng"
-    def authorEmail = "jleng@bcap.com"
+    def author = "Andy Coulson"
+    def authorEmail = "acoulson@practical-apps.com"
     def description = '''\
 Bulk Data Imports Plugin simplifies importing of bulk data via file uploads
 Default support for CSV and domain classes
@@ -22,11 +22,11 @@ Default support for CSV and domain classes
         "grails-app/views/importsTest/index.gsp"
     ]
     def loadBefore = ['rabbitmq','rabbit-amqp']
-    def documentation = "http://github.com/bertramdev/imports"
+    def documentation = "https://github.com/acoulson2000/imports"
     def watchedResources = "file:./grails-app/services/*Service.groovy"
-    def organization = [ name: "BertramLabs", url: "http://www.bertramlabs.com/" ]
+    def organization = [ name: "Original author: BertramLabs", url: "http://www.bertramlabs.com/" ]
     def license         = "APACHE"
-    def issueManagement = [ system: "GITHUB", url: "http://github.com/bertramdev/imports/issues" ]
+    def issueManagement = [ system: "GITHUB", url: "https://github.com/acoulson2000/imports" ]
     def scm             = [ url: "http://github.com/bertramdev/imports" ]
     
     def doWithSpring = {
