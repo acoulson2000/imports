@@ -9,7 +9,7 @@ also includes A "logger" that logs to MySql, which is convenient if you want to 
 your imports, but don't want to do it in Mongo DB. It would probably also work with other ANSI SQL
 DB's, although you might need to tweek the ImportLog Domain Object. See new section at the bottom of this
 README for info on how to enable that. I recommend you build this project and install it locally in 
-your local repo via "grails package-maven" then include it in your project via:
+your local repo via "grails maven-install" then include it in your project via:
 ```runtime ":bulk-data-imports:0.1.4"```
 
 **~END NOTE~**
