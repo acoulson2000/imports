@@ -4,9 +4,9 @@
 **NOTE**
 
 THIS PLUGIN IS A FORK OF http://github.com/bertramdev/imports - available in the Grails Plugins as
-"Bulk Data Imports" plugin. The original had amjor issues with parsing CSV files that include
+"Bulk Data Imports" plugin. The original had major issues with parsing CSV files that include
 either commas or quoted text. They have not merged my fork, but I am making it available here. It
-also includes A "logger" that logs to MySql, which is convenient if you want to persist the logs of 
+also includes a "logger" that logs to MySql, which is convenient if you want to persist the logs of 
 your imports, but don't want to do it in Mongo DB. It would probably also work with other ANSI SQL
 DB's, although you might need to tweek the ImportLog Domain Object. See new section at the bottom of this
 README for info on how to enable that. I recommend you build this project and install it locally in 
